@@ -1,0 +1,291 @@
+/* ---------------------------------------------------------------- board page */
+
+.board-shell {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 24px;
+  color: #fff;
+  background:
+    radial-gradient(600px 120px at 90% 0%, rgba(255, 255, 255, 0.22), transparent 70%),
+    linear-gradient(120deg, var(--board-color), color-mix(in srgb, var(--board-color) 50%, #fd79a8));
+}
+
+.board-header-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.board-heading {
+  min-width: 0;
+}
+
+.board-heading h1 {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.board-heading p {
+  margin: 2px 0 0;
+  font-size: 14px;
+  opacity: 0.88;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60vw;
+}
+
+.board-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn.on-color,
+.board-back {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.icon-btn.on-color:hover,
+.board-back:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.board-header .avatar {
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+.board-error {
+  padding: 12px 24px 0;
+}
+
+.board-error .form-error {
+  margin: 0;
+}
+
+.board-columns {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 20px 24px 24px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* ---------------------------------------------------------------- column */
+
+.column {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 300px;
+  max-height: 100%;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--column-accent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-2) 85%, transparent);
+  box-shadow: var(--shadow-sm);
+  animation: pop-in 0.3s ease both;
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px 10px 16px;
+}
+
+.column-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--column-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--column-accent) 25%, transparent);
+}
+
+.column-header h3 {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+}
+
+.column-rename {
+  flex: 1;
+}
+
+.column-rename .input {
+  padding: 4px 8px;
+}
+
+.column-count {
+  min-width: 24px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface-3);
+}
+
+.column-actions {
+  display: flex;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.column:hover .column-actions,
+.column-actions:focus-within {
+  opacity: 1;
+}
+
+.column-actions .icon-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.column-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 60px;
+  padding: 4px 10px 10px;
+  overflow-y: auto;
+}
+
+.column-empty {
+  margin: 8px 0;
+  padding: 18px 10px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.add-task-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 10px 12px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.add-task-btn:hover {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.add-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 0 280px;
+  padding: 16px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+button.add-column:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.add-column-form {
+  flex-direction: column;
+  align-items: stretch;
+  border-style: solid;
+  background: var(--surface);
+  cursor: default;
+}
+
+.add-column-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------- task card (basic) */
+
+.task-card {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.task-card h4 {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--priority-color);
+  background: color-mix(in srgb, var(--priority-color) 15%, transparent);
+}
+
+.priority-low {
+  --priority-color: var(--priority-low);
+}
+.priority-medium {
+  --priority-color: var(--priority-medium);
+}
+.priority-high {
+  --priority-color: var(--priority-high);
+}
+.priority-urgent {
+  --priority-color: var(--priority-urgent);
+}
+
+.empty-state {
+  max-width: 420px;
+  text-align: center;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+}
