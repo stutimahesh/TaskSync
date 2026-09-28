@@ -25,6 +25,7 @@ export default function BoardPage() {
   const [editingBoard, setEditingBoard] = useState(false);
   // { columnId } when creating a task, { taskId } when editing one
   const [taskModal, setTaskModal] = useState(null);
+  const [draggingId, setDraggingId] = useState(null);
 
   const load = useCallback(() => {
     api
@@ -113,6 +114,27 @@ export default function BoardPage() {
     }
   };
 
+  // Drop `taskId` into `columnId` just before `beforeId` (or at the end).
+  const dropTask = (taskId, columnId, beforeId) => {
+    setDraggingId(null);
+    const task = board.tasks[taskId];
+    if (!task) return;
+    const others = columnTasks(board, columnId).filter((t) => t.id !== taskId);
+    const index = beforeId == null ? others.length : others.findIndex((t) => t.id === beforeId);
+    const currentIndex = columnTasks(board, task.column_id).findIndex((t) => t.id === taskId);
+    if (task.column_id === columnId && index === currentIndex) return;
+
+    // Optimistic update first, then reconcile with the server's ordering.
+    dispatch({ type: "task:move", taskId, columnId, index });
+    api
+      .moveTask(taskId, columnId, index)
+      .then((data) => dispatch({ type: "tasks:reorder", tasks: data.tasks }))
+      .catch((err) => {
+        setError(err.message);
+        load();
+      });
+  };
+
   const deleteTask = async (task) => {
     await api.deleteTask(task.id);
     dispatch({ type: "task:remove", taskId: task.id });
@@ -168,7 +190,7 @@ export default function BoardPage() {
         </div>
       )}
 
-      <div className="board-columns">
+      <div className={`board-columns ${draggingId != null ? "is-dragging" : ""}`}>
         {board.columns.map((column, index) => (
           <Column
             key={column.id}
@@ -176,6 +198,10 @@ export default function BoardPage() {
             accent={COLUMN_ACCENTS[index % COLUMN_ACCENTS.length]}
             tasks={columnTasks(board, column.id)}
             isDone={DONE_RE.test(column.name.trim())}
+            draggingId={draggingId}
+            onDragStart={setDraggingId}
+            onDragEnd={() => setDraggingId(null)}
+            onDropTask={dropTask}
             onAddTask={(col) => setTaskModal({ columnId: col.id })}
             onOpenTask={(task) => setTaskModal({ taskId: task.id })}
             onRename={renameColumn}

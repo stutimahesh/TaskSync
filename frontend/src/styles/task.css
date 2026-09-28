@@ -163,3 +163,33 @@
 .btn-delete:hover:not(:disabled) {
   background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
+
+/* ---------------------------------------------------------------- drag and drop */
+
+.task-card[draggable="true"] {
+  cursor: grab;
+}
+
+.task-card.is-dragging {
+  opacity: 0.35;
+  transform: rotate(2deg) scale(0.98);
+  box-shadow: none;
+}
+
+.board-columns.is-dragging .task-card:not(.is-dragging):hover {
+  transform: none;
+}
+
+.column.is-drop-target {
+  border-color: var(--column-accent);
+  background: color-mix(in srgb, var(--column-accent) 10%, var(--surface-2));
+}
+
+.drop-indicator {
+  flex-shrink: 0;
+  height: 54px;
+  border: 2px dashed var(--column-accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--column-accent) 14%, transparent);
+  animation: fade-in 0.12s ease;
+}

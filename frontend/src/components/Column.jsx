@@ -1,10 +1,26 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { EditIcon, PlusIcon, TrashIcon } from "./Icons.jsx";
 import TaskCard from "./TaskCard.jsx";
 
-export default function Column({ column, accent, tasks, isDone, onAddTask, onOpenTask, onRename, onDelete }) {
+export default function Column({
+  column,
+  accent,
+  tasks,
+  isDone,
+  draggingId,
+  onDragStart,
+  onDragEnd,
+  onDropTask,
+  onAddTask,
+  onOpenTask,
+  onRename,
+  onDelete,
+}) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(column.name);
+  // Index (among the column's other cards) where a dragged card would land.
+  const [dropIndex, setDropIndex] = useState(null);
+  const bodyRef = useRef(null);
 
   function submitRename(e) {
     e?.preventDefault();
@@ -14,8 +30,67 @@ export default function Column({ column, accent, tasks, isDone, onAddTask, onOpe
     else setName(column.name);
   }
 
+  // --- drag and drop ------------------------------------------------------
+
+  function handleDragOver(e) {
+    if (draggingId == null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const cards = [...bodyRef.current.querySelectorAll("[data-task-id]")].filter(
+      (el) => Number(el.dataset.taskId) !== draggingId
+    );
+    const index = cards.findIndex((el) => {
+      const rect = el.getBoundingClientRect();
+      return e.clientY < rect.top + rect.height / 2;
+    });
+    setDropIndex(index === -1 ? cards.length : index);
+  }
+
+  function handleDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) setDropIndex(null);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    if (draggingId != null && dropIndex != null) {
+      const others = tasks.filter((t) => t.id !== draggingId);
+      onDropTask(draggingId, column.id, others[dropIndex]?.id ?? null);
+    }
+    setDropIndex(null);
+  }
+
+  // Render cards with a drop indicator slotted in at dropIndex.
+  const items = [];
+  let slot = 0;
+  for (const task of tasks) {
+    const isDragged = task.id === draggingId;
+    if (!isDragged && slot === dropIndex) items.push(<div key="drop" className="drop-indicator" />);
+    items.push(
+      <TaskCard
+        key={task.id}
+        task={task}
+        done={isDone}
+        dragging={isDragged}
+        onOpen={onOpenTask}
+        onDragStart={onDragStart}
+        onDragEnd={() => {
+          setDropIndex(null);
+          onDragEnd();
+        }}
+      />
+    );
+    if (!isDragged) slot += 1;
+  }
+  if (dropIndex != null && dropIndex >= slot) items.push(<div key="drop" className="drop-indicator" />);
+
   return (
-    <section className="column" style={{ "--column-accent": accent }}>
+    <section
+      className={`column ${dropIndex != null ? "is-drop-target" : ""}`}
+      style={{ "--column-accent": accent }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <header className="column-header">
         <span className="column-dot" />
         {editing ? (
@@ -46,11 +121,9 @@ export default function Column({ column, accent, tasks, isDone, onAddTask, onOpe
         </div>
       </header>
 
-      <div className="column-body">
-        {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} done={isDone} onOpen={onOpenTask} />
-        ))}
-        {tasks.length === 0 && <p className="column-empty">No tasks here yet</p>}
+      <div className="column-body" ref={bodyRef}>
+        {items}
+        {tasks.length === 0 && dropIndex == null && <p className="column-empty">Drop tasks here</p>}
       </div>
 
       <button className="add-task-btn" onClick={() => onAddTask(column)}>

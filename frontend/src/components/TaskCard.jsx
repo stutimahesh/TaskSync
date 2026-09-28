@@ -3,14 +3,22 @@ import { dueStatus, formatDue } from "../lib/dates.js";
 import Avatar from "./Avatar.jsx";
 import { CalendarIcon, CheckIcon } from "./Icons.jsx";
 
-export default function TaskCard({ task, done, onOpen }) {
+export default function TaskCard({ task, done, dragging, onOpen, onDragStart, onDragEnd }) {
   const priority = PRIORITIES.find((p) => p.value === task.priority);
   const status = done ? "done" : dueStatus(task.due_date);
 
   return (
     <article
-      className={`task-card priority-${task.priority} ${done ? "is-done" : ""}`}
+      className={`task-card priority-${task.priority} ${done ? "is-done" : ""} ${dragging ? "is-dragging" : ""}`}
       data-task-id={task.id}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(task.id));
+        // Defer so the browser snapshots the card before it fades out.
+        requestAnimationFrame(() => onDragStart(task.id));
+      }}
+      onDragEnd={onDragEnd}
       tabIndex={0}
       onClick={() => onOpen(task)}
       onKeyDown={(e) => e.key === "Enter" && onOpen(task)}
