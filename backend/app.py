@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
 
 from config import Config
 from extensions import db, socketio
@@ -14,9 +15,14 @@ def create_app(config_class=Config):
     db.init_app(app)
     socketio.init_app(app, cors_allowed_origins=app.config["CORS_ORIGINS"])
 
-    from routes import auth
+    from routes import auth, boards
 
     app.register_blueprint(auth.bp)
+    app.register_blueprint(boards.bp)
+
+    @app.errorhandler(HTTPException)
+    def handle_http_error(err):
+        return jsonify(error=err.description), err.code
 
     @app.get("/api/health")
     def health():
