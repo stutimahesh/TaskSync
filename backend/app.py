@@ -14,6 +14,10 @@ def create_app(config_class=Config):
     db.init_app(app)
     socketio.init_app(app, cors_allowed_origins=app.config["CORS_ORIGINS"])
 
+    from routes import auth
+
+    app.register_blueprint(auth.bp)
+
     @app.get("/api/health")
     def health():
         return jsonify(status="ok")
