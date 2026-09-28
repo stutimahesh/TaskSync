@@ -8,6 +8,7 @@ import { ArrowLeftIcon, EditIcon, TrashIcon } from "../components/Icons.jsx";
 import Navbar from "../components/Navbar.jsx";
 import TaskModal from "../components/TaskModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import useBoardSocket from "../hooks/useBoardSocket.js";
 import { api } from "../lib/api.js";
 import { boardReducer, columnTasks } from "../lib/boardState.js";
 import { COLUMN_ACCENTS } from "../lib/constants.js";
@@ -26,6 +27,7 @@ export default function BoardPage() {
   // { columnId } when creating a task, { taskId } when editing one
   const [taskModal, setTaskModal] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
+  const [online, setOnline] = useState([]);
 
   const load = useCallback(() => {
     api
@@ -35,6 +37,12 @@ export default function BoardPage() {
   }, [boardId]);
 
   useEffect(load, [load]);
+
+  useBoardSocket(boardId, dispatch, {
+    onPresence: setOnline,
+    onResync: load,
+    onAccessLost: (notice) => navigate("/", { replace: true, state: { notice } }),
+  });
 
   // Run an API call, surfacing errors in the banner.
   const run = useCallback(async (fn) => {
@@ -168,11 +176,17 @@ export default function BoardPage() {
           </div>
         </div>
         <div className="board-header-actions">
-          <div className="avatar-stack">
-            {board.members.slice(0, 6).map((m) => (
-              <Avatar key={m.id} user={m} size={30} />
-            ))}
-          </div>
+          {online.length > 0 && (
+            <div className="presence" title={`Viewing now: ${online.map((u) => u.name).join(", ")}`}>
+              <span className="live-dot" />
+              <div className="avatar-stack">
+                {online.slice(0, 5).map((u) => (
+                  <Avatar key={u.id} user={u} size={30} title={`${u.name} is viewing`} />
+                ))}
+              </div>
+              <span className="presence-label">{online.length} online</span>
+            </div>
+          )}
           <button className="icon-btn on-color" onClick={() => setEditingBoard(true)} title="Board settings">
             <EditIcon />
           </button>

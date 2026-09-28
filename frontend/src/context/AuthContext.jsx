@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, tokenStore } from "../lib/api.js";
+import { closeSocket } from "../lib/socket.js";
 
 const AuthContext = createContext(null);
 
@@ -10,6 +11,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     tokenStore.clear();
+    closeSocket();
     setToken(null);
     setUser(null);
   }, []);

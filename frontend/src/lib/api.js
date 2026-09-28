@@ -24,6 +24,13 @@ export const tokenStore = {
   },
 };
 
+// Sent with every request so the server can skip echoing our own changes
+// back to us over the socket.
+let socketId = null;
+export function setSocketId(id) {
+  socketId = id;
+}
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message);
@@ -35,6 +42,7 @@ async function request(path, { method = "GET", body } = {}) {
   const headers = { "Content-Type": "application/json" };
   const token = tokenStore.get();
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (socketId) headers["X-Socket-ID"] = socketId;
 
   const res = await fetch(`/api${path}`, {
     method,

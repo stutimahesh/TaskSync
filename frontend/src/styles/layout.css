@@ -281,3 +281,13 @@
     padding-top: 24px;
   }
 }
+
+.notice {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+}

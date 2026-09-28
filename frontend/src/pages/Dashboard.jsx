@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Avatar from "../components/Avatar.jsx";
 import BoardFormModal from "../components/BoardFormModal.jsx";
 import { PlusIcon } from "../components/Icons.jsx";
 import Navbar from "../components/Navbar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
+import { getSocket } from "../lib/socket.js";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -15,8 +16,9 @@ function greeting() {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
+  const notice = useLocation().state?.notice;
   const [boards, setBoards] = useState(null);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -29,6 +31,13 @@ export default function Dashboard() {
   }, []);
 
   useEffect(load, [load]);
+
+  // Refresh when someone shares a board with us or a board we're on is deleted.
+  useEffect(() => {
+    const socket = getSocket(token);
+    socket.on("boards:changed", load);
+    return () => socket.off("boards:changed", load);
+  }, [token, load]);
 
   async function createBoard(values) {
     const { board } = await api.createBoard(values);
@@ -55,6 +64,7 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {notice && <p className="notice">{notice}</p>}
         {error && <p className="form-error">{error}</p>}
 
         {boards === null ? (
