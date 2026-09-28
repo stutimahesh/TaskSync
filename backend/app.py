@@ -15,11 +15,12 @@ def create_app(config_class=Config):
     db.init_app(app)
     socketio.init_app(app, cors_allowed_origins=app.config["CORS_ORIGINS"])
 
-    from routes import auth, boards, columns
+    from routes import auth, boards, columns, tasks
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(boards.bp)
     app.register_blueprint(columns.bp)
+    app.register_blueprint(tasks.bp)
 
     @app.errorhandler(HTTPException)
     def handle_http_error(err):
