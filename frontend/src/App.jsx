@@ -1,3 +1,9 @@
+import { AuthProvider } from "./context/AuthContext.jsx";
+
 export default function App() {
-  return <h1>TaskSync</h1>;
+  return (
+    <AuthProvider>
+      <h1>TaskSync</h1>
+    </AuthProvider>
+  );
 }
