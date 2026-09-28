@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AddColumn from "../components/AddColumn.jsx";
 import Avatar from "../components/Avatar.jsx";
 import BoardFormModal from "../components/BoardFormModal.jsx";
 import Column from "../components/Column.jsx";
-import { ArrowLeftIcon, EditIcon, TrashIcon } from "../components/Icons.jsx";
+import FilterBar from "../components/FilterBar.jsx";
+import { ArrowLeftIcon, EditIcon, TrashIcon, UsersIcon } from "../components/Icons.jsx";
+import MembersModal from "../components/MembersModal.jsx";
 import Navbar from "../components/Navbar.jsx";
 import TaskModal from "../components/TaskModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -12,6 +14,7 @@ import useBoardSocket from "../hooks/useBoardSocket.js";
 import { api } from "../lib/api.js";
 import { boardReducer, columnTasks } from "../lib/boardState.js";
 import { COLUMN_ACCENTS } from "../lib/constants.js";
+import { EMPTY_FILTERS, matchesFilters } from "../lib/filters.js";
 import "../styles/board.css";
 import "../styles/task.css";
 
@@ -28,6 +31,8 @@ export default function BoardPage() {
   const [taskModal, setTaskModal] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
   const [online, setOnline] = useState([]);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [showMembers, setShowMembers] = useState(false);
 
   const load = useCallback(() => {
     api
@@ -43,6 +48,8 @@ export default function BoardPage() {
     onResync: load,
     onAccessLost: (notice) => navigate("/", { replace: true, state: { notice } }),
   });
+
+  const onlineIds = useMemo(() => new Set(online.map((u) => u.id)), [online]);
 
   // Run an API call, surfacing errors in the banner.
   const run = useCallback(async (fn) => {
@@ -77,6 +84,10 @@ export default function BoardPage() {
   }
 
   const isOwner = board.owner_id === user.id;
+  const allTasks = Object.values(board.tasks);
+  const visible = (columnId) =>
+    columnTasks(board, columnId).filter((t) => matchesFilters(t, filters, user.id));
+  const shownCount = allTasks.filter((t) => matchesFilters(t, filters, user.id)).length;
 
   const addColumn = (name) =>
     run(async () => {
@@ -148,6 +159,21 @@ export default function BoardPage() {
     dispatch({ type: "task:remove", taskId: task.id });
   };
 
+  const inviteMember = async (email) => {
+    const { user: member } = await api.addMember(board.id, email);
+    dispatch({ type: "member:add", user: member });
+    return member;
+  };
+
+  const removeMember = async (member) => {
+    await api.removeMember(board.id, member.id);
+    if (member.id === user.id) {
+      navigate("/", { replace: true, state: { notice: `You left "${board.name}".` } });
+      return;
+    }
+    dispatch({ type: "member:remove", userId: member.id });
+  };
+
   const updateBoard = async (values) => {
     const data = await api.updateBoard(board.id, values);
     dispatch({ type: "board:update", board: data.board });
@@ -187,6 +213,10 @@ export default function BoardPage() {
               <span className="presence-label">{online.length} online</span>
             </div>
           )}
+          <button className="members-btn" onClick={() => setShowMembers(true)} title="Board members">
+            <UsersIcon size={16} />
+            {board.members.length}
+          </button>
           <button className="icon-btn on-color" onClick={() => setEditingBoard(true)} title="Board settings">
             <EditIcon />
           </button>
@@ -197,6 +227,14 @@ export default function BoardPage() {
           )}
         </div>
       </div>
+
+      <FilterBar
+        filters={filters}
+        onChange={setFilters}
+        members={board.members}
+        shown={shownCount}
+        total={allTasks.length}
+      />
 
       {error && (
         <div className="board-error">
@@ -210,7 +248,7 @@ export default function BoardPage() {
             key={column.id}
             column={column}
             accent={COLUMN_ACCENTS[index % COLUMN_ACCENTS.length]}
-            tasks={columnTasks(board, column.id)}
+            tasks={visible(column.id)}
             isDone={DONE_RE.test(column.name.trim())}
             draggingId={draggingId}
             onDragStart={setDraggingId}
@@ -235,6 +273,17 @@ export default function BoardPage() {
           onClose={() => setTaskModal(null)}
           onSave={saveTask}
           onDelete={deleteTask}
+        />
+      )}
+
+      {showMembers && (
+        <MembersModal
+          board={board}
+          currentUser={user}
+          onlineIds={onlineIds}
+          onClose={() => setShowMembers(false)}
+          onInvite={inviteMember}
+          onRemove={removeMember}
         />
       )}
 
