@@ -2,7 +2,7 @@ import { useState } from "react";
 import { EditIcon, PlusIcon, TrashIcon } from "./Icons.jsx";
 import TaskCard from "./TaskCard.jsx";
 
-export default function Column({ column, accent, tasks, onAddTask, onOpenTask, onRename, onDelete }) {
+export default function Column({ column, accent, tasks, isDone, onAddTask, onOpenTask, onRename, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(column.name);
 
@@ -48,7 +48,7 @@ export default function Column({ column, accent, tasks, onAddTask, onOpenTask, o
 
       <div className="column-body">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onOpen={onOpenTask} />
+          <TaskCard key={task.id} task={task} done={isDone} onOpen={onOpenTask} />
         ))}
         {tasks.length === 0 && <p className="column-empty">No tasks here yet</p>}
       </div>

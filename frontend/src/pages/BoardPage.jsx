@@ -6,11 +6,15 @@ import BoardFormModal from "../components/BoardFormModal.jsx";
 import Column from "../components/Column.jsx";
 import { ArrowLeftIcon, EditIcon, TrashIcon } from "../components/Icons.jsx";
 import Navbar from "../components/Navbar.jsx";
+import TaskModal from "../components/TaskModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
 import { boardReducer, columnTasks } from "../lib/boardState.js";
 import { COLUMN_ACCENTS } from "../lib/constants.js";
 import "../styles/board.css";
+import "../styles/task.css";
+
+const DONE_RE = /^(done|complete|completed)$/i;
 
 export default function BoardPage() {
   const boardId = Number(useParams().boardId);
@@ -19,6 +23,8 @@ export default function BoardPage() {
   const [board, dispatch] = useReducer(boardReducer, null);
   const [error, setError] = useState("");
   const [editingBoard, setEditingBoard] = useState(false);
+  // { columnId } when creating a task, { taskId } when editing one
+  const [taskModal, setTaskModal] = useState(null);
 
   const load = useCallback(() => {
     api
@@ -88,6 +94,30 @@ export default function BoardPage() {
     });
   };
 
+  const saveTask = async ({ column_id, ...fields }) => {
+    const current = taskModal.taskId ? board.tasks[taskModal.taskId] : null;
+    if (!current) {
+      const { task } = await api.createTask(column_id, fields);
+      dispatch({ type: "task:upsert", task });
+      return;
+    }
+
+    const { task } = await api.updateTask(current.id, fields);
+    dispatch({ type: "task:upsert", task });
+    if (column_id !== current.column_id) {
+      // Changing status from the modal moves the task to the end of that column.
+      const index = columnTasks(board, column_id).length;
+      dispatch({ type: "task:move", taskId: task.id, columnId: column_id, index });
+      const data = await api.moveTask(task.id, column_id, index);
+      dispatch({ type: "tasks:reorder", tasks: data.tasks });
+    }
+  };
+
+  const deleteTask = async (task) => {
+    await api.deleteTask(task.id);
+    dispatch({ type: "task:remove", taskId: task.id });
+  };
+
   const updateBoard = async (values) => {
     const data = await api.updateBoard(board.id, values);
     dispatch({ type: "board:update", board: data.board });
@@ -145,14 +175,28 @@ export default function BoardPage() {
             column={column}
             accent={COLUMN_ACCENTS[index % COLUMN_ACCENTS.length]}
             tasks={columnTasks(board, column.id)}
-            onAddTask={() => {}}
-            onOpenTask={() => {}}
+            isDone={DONE_RE.test(column.name.trim())}
+            onAddTask={(col) => setTaskModal({ columnId: col.id })}
+            onOpenTask={(task) => setTaskModal({ taskId: task.id })}
             onRename={renameColumn}
             onDelete={deleteColumn}
           />
         ))}
         <AddColumn onAdd={addColumn} />
       </div>
+
+      {taskModal && (taskModal.columnId || board.tasks[taskModal.taskId]) && (
+        <TaskModal
+          key={taskModal.taskId ?? `new-${taskModal.columnId}`}
+          task={taskModal.taskId ? board.tasks[taskModal.taskId] : null}
+          columnId={taskModal.columnId}
+          columns={board.columns}
+          members={board.members}
+          onClose={() => setTaskModal(null)}
+          onSave={saveTask}
+          onDelete={deleteTask}
+        />
+      )}
 
       {editingBoard && (
         <BoardFormModal board={board} onClose={() => setEditingBoard(false)} onSubmit={updateBoard} />

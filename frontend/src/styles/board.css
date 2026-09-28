@@ -239,22 +239,7 @@ button.add-column:hover {
   gap: 8px;
 }
 
-/* ---------------------------------------------------------------- task card (basic) */
-
-.task-card {
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-}
-
-.task-card h4 {
-  margin: 6px 0 0;
-  font-size: 14px;
-  font-weight: 600;
-}
+/* ---------------------------------------------------------------- priorities */
 
 .priority-badge {
   display: inline-block;
