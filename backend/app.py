@@ -3,6 +3,7 @@ from flask_cors import CORS
 
 from config import Config
 from extensions import db, socketio
+import models  # noqa: F401  (register tables)
 
 
 def create_app(config_class=Config):
