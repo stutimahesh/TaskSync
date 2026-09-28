@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "tasksync-theme";
+const ThemeContext = createContext({ theme: "light", toggle: () => {} });
 
 function initialTheme() {
   try {
@@ -12,7 +13,7 @@ function initialTheme() {
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-export default function useTheme() {
+export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(initialTheme);
 
   useEffect(() => {
@@ -25,5 +26,10 @@ export default function useTheme() {
   }, [theme]);
 
   const toggle = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
-  return { theme, toggle };
+  const value = useMemo(() => ({ theme, toggle }), [theme, toggle]);
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+export default function useTheme() {
+  return useContext(ThemeContext);
 }
