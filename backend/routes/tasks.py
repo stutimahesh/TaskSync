@@ -7,6 +7,7 @@ from auth import login_required
 from extensions import db
 from models import PRIORITIES, BoardColumn, Task
 from permissions import get_board_or_404, get_column_or_404, get_task_or_404
+from realtime import broadcast
 
 bp = Blueprint("tasks", __name__, url_prefix="/api")
 
@@ -73,6 +74,7 @@ def create_task(column_id):
     )
     db.session.add(task)
     db.session.commit()
+    broadcast(task.board_id, "task:created", {"task": task.to_dict()})
     return jsonify(task=task.to_dict()), 201
 
 
@@ -93,6 +95,7 @@ def update_task(task_id):
     for key, value in fields.items():
         setattr(task, key, value)
     db.session.commit()
+    broadcast(task.board_id, "task:updated", {"task": task.to_dict()})
     return jsonify(task=task.to_dict())
 
 
@@ -103,6 +106,7 @@ def delete_task(task_id):
     board_id = task.board_id
     db.session.delete(task)
     db.session.commit()
+    broadcast(board_id, "task:deleted", {"task_id": task_id})
     return "", 204
 
 
@@ -141,6 +145,7 @@ def move_task(task_id):
     db.session.commit()
 
     ordering = [{"id": t.id, "column_id": t.column_id, "position": t.position} for t in affected.values()]
+    broadcast(task.board_id, "tasks:reordered", {"tasks": ordering})
     return jsonify(task=task.to_dict(), tasks=ordering)
 
 

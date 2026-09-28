@@ -6,6 +6,7 @@ from auth import login_required
 from extensions import db
 from models import DEFAULT_COLUMNS, Board, BoardColumn, Task, User
 from permissions import get_board_or_404
+from realtime import broadcast, evict_user, notify_users
 
 bp = Blueprint("boards", __name__, url_prefix="/api")
 
@@ -74,6 +75,7 @@ def update_board(board_id):
         board.color = data["color"]
 
     db.session.commit()
+    broadcast(board.id, "board:updated", {"board": board.to_dict()})
     return jsonify(board=board.to_dict())
 
 
@@ -87,6 +89,8 @@ def delete_board(board_id):
     member_ids = [m.id for m in board.members]
     db.session.delete(board)
     db.session.commit()
+    broadcast(board_id, "board:deleted", {"board_id": board_id})
+    notify_users(member_ids, "boards:changed")
     return "", 204
 
 
@@ -103,6 +107,8 @@ def add_member(board_id):
 
     board.members.append(user)
     db.session.commit()
+    broadcast(board.id, "member:added", {"user": user.to_dict()})
+    notify_users([user.id], "boards:changed")
     return jsonify(user=user.to_dict()), 201
 
 
@@ -122,4 +128,7 @@ def remove_member(board_id, user_id):
     Task.query.filter_by(board_id=board.id, assignee_id=user_id).update({"assignee_id": None})
     board.members.remove(member)
     db.session.commit()
+    broadcast(board.id, "member:removed", {"user_id": user_id})
+    evict_user(board.id, user_id)
+    notify_users([user_id], "boards:changed")
     return "", 204

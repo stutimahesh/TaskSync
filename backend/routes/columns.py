@@ -4,6 +4,7 @@ from auth import login_required
 from extensions import db
 from models import BoardColumn
 from permissions import get_board_or_404, get_column_or_404
+from realtime import broadcast
 
 bp = Blueprint("columns", __name__, url_prefix="/api")
 
@@ -23,6 +24,7 @@ def create_column(board_id):
     column = BoardColumn(board_id=board.id, name=name, position=len(board.columns))
     db.session.add(column)
     db.session.commit()
+    broadcast(board.id, "column:created", {"column": column.to_dict()})
     return jsonify(column=column.to_dict()), 201
 
 
@@ -36,6 +38,7 @@ def rename_column(column_id):
 
     column.name = name
     db.session.commit()
+    broadcast(column.board_id, "column:updated", {"column": column.to_dict()})
     return jsonify(column=column.to_dict())
 
 
@@ -53,4 +56,5 @@ def delete_column(column_id):
     for position, col in enumerate(remaining):
         col.position = position
     db.session.commit()
+    broadcast(board.id, "column:deleted", {"column_id": column_id})
     return "", 204

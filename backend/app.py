@@ -15,6 +15,8 @@ def create_app(config_class=Config):
     db.init_app(app)
     socketio.init_app(app, cors_allowed_origins=app.config["CORS_ORIGINS"])
 
+    import sockets  # noqa: F401  (register Socket.IO handlers)
+
     from routes import auth, boards, columns, tasks
 
     app.register_blueprint(auth.bp)
